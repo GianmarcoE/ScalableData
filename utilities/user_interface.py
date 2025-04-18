@@ -28,18 +28,15 @@ def open_file():
                 if row[2] != 'Cancelled' and row[2] != 'status':
                     list_rows.append(row)
     list_rows.reverse()
-    capital, dates = operations.find_capital(list_rows)
+    capital = operations.find_capital(list_rows)
     stock_list, interests = operations.find_closed_positions(list_rows)
-    table2(interests, capital, dates, round(interests*100/capital, 2), stock_list)
+    table2(interests, capital, round(interests*100/capital, 2), stock_list)
 
 
-def table2(interests, capital, dates, interest_rate, stock_list):
+def table2(interests, capital, interest_rate, stock_list):
     root = ttk.Window(themename='superhero')
     root.title('Results')
     root.minsize(350, 160)
-
-    lbl = ttk.Label(root, text=dates, font='Calibri 11 bold', foreground='#69E141', background='#303c54')
-    lbl.pack(fill='x', padx=30, pady=(30, 10))
 
     lbl = ttk.Label(root, text=f'Invested capital: {capital}€',
                     font='Calibri 11', foreground='white', background='#303c54')

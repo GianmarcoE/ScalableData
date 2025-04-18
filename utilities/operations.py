@@ -1,7 +1,16 @@
+def dates_range(input_file):
+    ranges = []
+    ranges.append(input_file[0][0])
+    ranges.append(input_file[-1][0])
+    for date in range(len(ranges)):
+        ranges[date] = ranges[date][-2:] + '/' + ranges[date][5:-3] + '/' + ranges[date][:4]
+
+    return ranges
+
+
 def find_capital(input_file):
     capital = 0
     stock_gain = 0
-    dates = f'Time period {input_file[0][0]} / {input_file[-1][0]}'
 
     for stock in range(len(input_file)):
         if input_file[stock][6] == 'Buy' and stock_gain < float(input_file[stock][10].replace('.', '').replace(',', '.')):
@@ -12,7 +21,7 @@ def find_capital(input_file):
         elif input_file[stock][6] == 'Buy':
             stock_gain += float(input_file[stock][10].replace('.', '').replace(',', '.'))
 
-    return round(capital, 2), dates
+    return round(capital, 2)
 
 
 def find_closed_positions(input_file):
@@ -24,7 +33,7 @@ def find_closed_positions(input_file):
 
     for sell_row in range(0, len(input_file)):
         if input_file[sell_row][6] == 'Sell' and input_file[sell_row][5] == 'Security':
-            stock = Stocks(input_file[sell_row][4][:21], 0,
+            stock = Stocks(input_file[sell_row][4][:21], 0, 0,
                            float(input_file[sell_row][10].replace('.', '').replace(',', '.')),
                            0, 0, float(input_file[sell_row][8].replace('.', '').replace(',', '.')))
             while stock.quantity_buy < stock.quantity_sell:
@@ -34,7 +43,8 @@ def find_closed_positions(input_file):
                         stock.quantity_buy += float(buy_row[8].replace('.', '').replace(',', '.'))
                         input_copy_buy.remove(buy_row)
                         break
-            stock.price_diff = stock.money_in + stock.money_out
+            stock.price_diff = round(stock.money_in + stock.money_out, 2)
+            stock.percentage = round((stock.price_diff / -stock.money_out) * 100, 2)
             total_balance += stock.price_diff
             stock_list.append(stock)
 
@@ -42,9 +52,10 @@ def find_closed_positions(input_file):
 
 
 class Stocks:
-    def __init__(self, name, price_diff, money_in, money_out, quantity_buy, quantity_sell):
+    def __init__(self, name, price_diff, percentage, money_in, money_out, quantity_buy, quantity_sell):
         self.name = name
         self.price_diff = price_diff
+        self.percentage = percentage
         self.money_in = money_in
         self.money_out = money_out
         self.quantity_buy = quantity_buy
