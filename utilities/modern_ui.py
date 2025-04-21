@@ -19,9 +19,11 @@ class UI(QMainWindow):
         self.tabWidget.setTabVisible(0, False)
         self.tabWidget.setTabVisible(1, False)
         self.calendarWidget.setVisible(False)
+        self.calendarWidget_2.setVisible(False)
         self.lineEdit.setVisible(False)
         self.lineEdit_2.setVisible(False)
         self.pushButton_2.setVisible(False)
+        self.pushButton_3.setVisible(False)
 
         self.show()
 
@@ -38,20 +40,22 @@ class UI(QMainWindow):
         ranges = operations.dates_range(list_rows)
         list_rows.reverse()
         capital = operations.find_capital(list_rows)
-        print(capital)
-        stock_list, interests = operations.find_closed_positions(list_rows)
+        stock_list, interests = operations.find_closed_positions_buyorientedtry(list_rows)
         self.ui_tabs(capital, stock_list, interests, ranges)
 
     def ui_tabs(self, capital, stock_list, interests, ranges):
         uic.loadUi('C:\\Users\\gianm\\OneDrive\\Desktop\\Scalable\\try2.ui', self)
         self.pushButton.clicked.connect(self.open_file)
-        self.calendarWidget.setVisible(False)
         self.lineEdit.setText(ranges[0])
         self.lineEdit_2.setText(ranges[1])
         self.lineEdit.setInputMask('00/00/0000')
         self.lineEdit_2.setInputMask('00/00/0000')
-        self.pushButton_2.setIcon(QtGui.QIcon("calendar.png"))
-        self.pushButton_2.clicked.connect(self.calendar)
+        self.calendarWidget.setVisible(False)
+        self.calendarWidget_2.setVisible(False)
+        self.pushButton_2.setIcon(QtGui.QIcon("utilities/calendar.png"))
+        self.pushButton_2.clicked.connect(self.calendar_end)
+        self.pushButton_3.setIcon(QtGui.QIcon("utilities/calendar.png"))
+        self.pushButton_3.clicked.connect(self.calendar_start)
         # self.lineEdit.textEdited.connect(self.open_file)
 
         self.label_recap.setText(f"Capital:   {capital}")
@@ -141,38 +145,66 @@ class UI(QMainWindow):
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
             tab.setShowGrid(False)
             tab.setStyleSheet("font-weight:800; padding: 10 0 10 0px; color: #fff;"
-                                           "background-color: rgb(49, 49, 49);")
+                              "background-color: rgb(49, 49, 49);")
 
         self.show()
 
-    def calendar(self):
-        self.calendarWidget.show()
-        self.calendarWidget.clicked.connect(self.date_sel)
-
-    def date_sel(self):
-        date_selected = str(self.calendarWidget.selectedDate()).split('(')[1].split(')')[0]
-        if len(date_selected) == 10:
-            date_selected = date_selected.replace(", ", "/0")
-        else:
-            date_selected = date_selected.replace(", ", "/0", 1).replace(", ", '/')
-
-        date_selected = date_selected[-2:] + date_selected[4:-2] + date_selected[:4]
-        self.lineEdit_2.setText(date_selected)
+    def calendar_start(self):
+        date = QDate(int(self.lineEdit.text()[-4:]),
+                     int(self.lineEdit.text()[3:-5].replace('0', '')),
+                     int(self.lineEdit.text()[:2]))
+        self.calendarWidget_2.setSelectedDate(date)
         self.calendarWidget.setVisible(False)
-        self.updated_range(date_selected)
+        self.calendarWidget_2.show()
+        self.calendarWidget_2.clicked.connect(lambda start: self.date_sel(True))
+
+    def calendar_end(self):
+        date = QDate(int(self.lineEdit_2.text()[-4:]),
+                     int(self.lineEdit_2.text()[3:-5].replace('0', '')),
+                     int(self.lineEdit_2.text()[:2]))
+        self.calendarWidget.setSelectedDate(date)
+        self.calendarWidget_2.setVisible(False)
+        self.calendarWidget.show()
+        self.calendarWidget.clicked.connect(lambda start: self.date_sel(False))
+
+    def date_sel(self, start):
+        if not start:
+            date_selected = str(self.calendarWidget.selectedDate()).split('(')[1].split(')')[0]
+        else:
+            date_selected = str(self.calendarWidget_2.selectedDate()).split('(')[1].split(')')[0]
+        date_selected = date_selected.split(', ')
+        for i in range(len(date_selected)):
+            if len(date_selected[i]) == 1:
+                date_selected[i] = '0' + date_selected[i]
+        date_selected = ''.join(date_selected)
+
+        date_selected = date_selected[-2:] + '/' + date_selected[4:-2] + '/' + date_selected[:4]
+        if start:
+            self.lineEdit.setText(date_selected)
+            self.calendarWidget_2.setVisible(False)
+        else:
+            self.lineEdit_2.setText(date_selected)
+            self.calendarWidget.setVisible(False)
+
+        date_ranges = []
+        date_ranges.append(self.lineEdit.text())
+        date_ranges.append(self.lineEdit_2.text())
+
+        self.updated_range(date_ranges)
 
     def updated_range(self, date_selected):
-        date_selected = datetime.strptime(date_selected, "%d/%m/%Y").date()
-        date = datetime.strptime(list_rows[0][0], "%Y-%m-%d").date()
+        for i in range(len(date_selected)):
+            date_selected[i] = datetime.strptime(date_selected[i], "%d/%m/%Y").date()
         new_list = []
         for row in list_rows:
             date = datetime.strptime(row[0], "%Y-%m-%d").date()
-            if date < date_selected:
+            if date_selected[0] <= date <= date_selected[1]:
                 new_list.append(row)
         ranges = operations.dates_range(new_list)
-        capital, dates = operations.find_capital(new_list)
-        stock_list, interests = operations.find_closed_positions(new_list)
-        self.ui_tabs(capital, dates, stock_list, interests, ranges)
+        ranges[0], ranges[1] = ranges[1], ranges[0]
+        capital = operations.find_capital(new_list)
+        stock_list, interests = operations.find_closed_positions_buyorientedtry(new_list)
+        self.ui_tabs(capital, stock_list, interests, ranges)
 
 
 app = QApplication(sys.argv)

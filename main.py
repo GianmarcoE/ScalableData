@@ -1,8 +1,8 @@
-from utilities import user_interface
+from utilities import modern_ui
 
 
 def main(dev_run):
-    user_interface.ui()
+    modern_ui.UI()
 
 
 if __name__ == '__main__':
